@@ -1,6 +1,6 @@
 import { Router } from 'express';
 
-const router = Router();
+const router: Router = Router();
 
 // POST /api/v1/auth/register
 router.post('/register', (_req, res) => res.status(501).json({ message: 'Not implemented' }));

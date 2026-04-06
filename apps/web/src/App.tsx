@@ -4,10 +4,7 @@ import { queryClient } from '@lib/query-client';
 import { useAuthStore } from '@stores/auth.store';
 
 // Layouts (stubs for now — filled in S5)
-const AuthLayout  = () => <div>Auth layout placeholder</div>;
-const AdminLayout = () => <div>Admin layout placeholder</div>;
-const DonorLayout = () => <div>Donor layout placeholder</div>;
-const NGOLayout   = () => <div>NGO layout placeholder</div>;
+const AuthLayout = () => <div>Auth layout placeholder</div>;
 
 // Pages (stubs)
 const LoginPage   = () => <div>Login</div>;
