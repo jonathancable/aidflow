@@ -5,8 +5,16 @@ import cors from 'cors';
 import { env } from './config/env';
 import { requestLogger } from './middleware/logger.middleware';
 import { errorHandler }   from './middleware/error.middleware';
-import { authRouter }     from './routes/auth.routes';
-// More routers imported here as modules are built
+import { authRouter }          from './routes/auth.routes';
+import { programsRouter }      from './routes/programs.routes';
+import { contributionsRouter } from './routes/contributions.routes';
+import { walletsRouter }       from './routes/wallets.routes';
+import { allocationsRouter }   from './routes/allocations.routes';
+import { distributionRouter }  from './routes/distribution.routes';
+import { beneficiariesRouter } from './routes/beneficiaries.routes';
+import { vendorsRouter }       from './routes/vendors.routes';
+import { reportsRouter }       from './routes/reports.routes';
+import { usersRouter }         from './routes/users.routes';
 
 const app = express();
 
@@ -21,8 +29,16 @@ app.use(express.urlencoded({ extended: true }));
 app.use(requestLogger);
 
 // Routes
-app.use('/api/v1/auth', authRouter);
-// app.use('/api/v1/programs', programRouter);  // add per sprint
+app.use('/api/v1/auth',          authRouter);
+app.use('/api/v1/programs',      programsRouter);
+app.use('/api/v1/contributions', contributionsRouter);
+app.use('/api/v1/wallets',       walletsRouter);
+app.use('/api/v1/allocations',   allocationsRouter);
+app.use('/api/v1/distribution',  distributionRouter);
+app.use('/api/v1/beneficiaries', beneficiariesRouter);
+app.use('/api/v1/vendors',       vendorsRouter);
+app.use('/api/v1/reports',       reportsRouter);
+app.use('/api/v1/users',         usersRouter);
 
 // Health check — for load balancer / uptime monitoring
 app.get('/health', (_req, res) => res.json({ status: 'ok', ts: Date.now() }));
