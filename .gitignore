@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.turbo/
+
+# Environment secrets — never commit these
+.env.local
+.env.*.local
+apps/**/.env.local
+apps/**/.env.*.local
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/settings.json
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*

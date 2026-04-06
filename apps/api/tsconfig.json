@@ -1,0 +1,21 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "baseUrl": ".",
+    "paths": {
+      "@/*":             ["src/*"],
+      "@dal/*":          ["src/dal/*"],
+      "@services/*":     ["src/services/*"],
+      "@routes/*":       ["src/routes/*"],
+      "@middleware/*":   ["src/middleware/*"],
+      "@config/*":       ["src/config/*"],
+      "@types/*":        ["src/types/*"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["dist", "node_modules"]
+}
