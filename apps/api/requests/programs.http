@@ -1,0 +1,40 @@
+### AidFlow API — Programs endpoints
+# REST Client extension: click 'Send Request' above each block
+
+@baseUrl = http://localhost:4000/api/v1
+@token = REPLACE_WITH_JWT_TOKEN
+
+### List programs (501 in Sprint 1)
+GET {{baseUrl}}/programs
+Accept: application/json
+Authorization: Bearer {{token}}
+
+### Get program by ID (501 in Sprint 1)
+GET {{baseUrl}}/programs/PROGRAM_ID
+Accept: application/json
+Authorization: Bearer {{token}}
+
+### Create program (501 in Sprint 1)
+POST {{baseUrl}}/programs
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Food Aid 2026",
+  "description": "Emergency food distribution program",
+  "targetAmount": 100000,
+  "currency": "USD"
+}
+
+### Update program (501 in Sprint 1)
+PATCH {{baseUrl}}/programs/PROGRAM_ID
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Food Aid 2026 — Updated"
+}
+
+### Delete program (501 in Sprint 1)
+DELETE {{baseUrl}}/programs/PROGRAM_ID
+Authorization: Bearer {{token}}

@@ -1,0 +1,25 @@
+### AidFlow API — Wallets endpoints
+# REST Client extension: click 'Send Request' above each block
+
+@baseUrl = http://localhost:4000/api/v1
+@token = REPLACE_WITH_JWT_TOKEN
+
+### List wallets (501 in Sprint 1)
+GET {{baseUrl}}/wallets
+Accept: application/json
+Authorization: Bearer {{token}}
+
+### Get wallet by ID (501 in Sprint 1)
+GET {{baseUrl}}/wallets/WALLET_ID
+Accept: application/json
+Authorization: Bearer {{token}}
+
+### Get wallet balance (501 in Sprint 1)
+GET {{baseUrl}}/wallets/WALLET_ID/balance
+Accept: application/json
+Authorization: Bearer {{token}}
+
+### Get wallet ledger (501 in Sprint 1)
+GET {{baseUrl}}/wallets/WALLET_ID/ledger
+Accept: application/json
+Authorization: Bearer {{token}}

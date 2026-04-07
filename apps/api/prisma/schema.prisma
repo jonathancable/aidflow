@@ -1,0 +1,498 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  system_admin
+  system_controller
+  donor
+  government_org
+  ngo
+  vendor
+  supportive_group
+  beneficiary
+}
+
+enum OrgType {
+  ngo
+  government
+  vendor
+  supportive_group
+}
+
+enum WalletOwnerType {
+  system_treasury
+  donor
+  program
+  ngo
+  vendor
+  beneficiary
+}
+
+enum ContributionStatus {
+  pending
+  confirmed
+  allocated
+  refunded
+}
+
+enum AllocationStatus {
+  draft
+  pending_approval
+  approved
+  released
+  rejected
+  reversed
+}
+
+enum BatchStatus {
+  draft
+  submitted
+  approved
+  released
+  in_delivery
+  completed
+  partially_completed
+  cancelled
+}
+
+enum BatchItemStatus {
+  pending
+  confirmed
+  failed
+  reversed
+}
+
+enum VendorOrderStatus {
+  issued
+  acknowledged
+  in_delivery
+  delivered
+  disputed
+}
+
+enum SettlementStatus {
+  pending
+  approved
+  processing
+  settled
+  failed
+}
+
+enum ProgramStatus {
+  draft
+  active
+  paused
+  completed
+  cancelled
+}
+
+enum LedgerDirection {
+  credit
+  debit
+}
+
+enum ApprovalStatus {
+  pending
+  approved
+  rejected
+}
+
+//User, Organization, RefreshToken
+
+model User {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  passwordHash String
+  fullName     String
+  role         UserRole
+  status       String        @default("pending")
+  orgId        String?
+  org          Organization? @relation(fields: [orgId], references: [id])
+  lastLoginAt  DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  contributions       Contribution[]
+  auditLogs           AuditLog[]
+  notifications       Notification[]
+  approvalRequests    ApprovalRequest[] @relation("RequestedBy")
+  approvalResolutions ApprovalRequest[] @relation("ResolvedBy")
+  refreshTokens       RefreshToken[]
+  beneficiary         Beneficiary?
+
+  @@index([email])
+  @@index([role])
+  @@index([orgId])
+  @@map("users")
+}
+
+model Organization {
+  id                 String   @id @default(uuid())
+  name               String
+  type               OrgType
+  verificationStatus String   @default("pending")
+  region             String?
+  contactEmail       String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  users         User[]
+  programs      Program[]
+  batches       DistributionBatch[]
+  orders        VendorOrder[]
+  beneficiaries Beneficiary[]
+
+  @@index([type])
+  @@map("organizations")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@map("refresh_tokens")
+}
+
+//ProgramMilestone, Wallet
+
+model Program {
+  id           String        @id @default(uuid())
+  name         String
+  description  String?
+  type         String
+  status       ProgramStatus @default(draft)
+  budgetTarget Decimal       @db.Decimal(18, 2)
+  fundedAmount Decimal       @default(0) @db.Decimal(18, 2)
+  region       String?
+  startDate    DateTime?
+  endDate      DateTime?
+  orgId        String
+  org          Organization  @relation(fields: [orgId], references: [id])
+  createdBy    String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  contributions Contribution[]
+  allocations   Allocation[]
+  batches       DistributionBatch[]
+  milestones    ProgramMilestone[]
+
+  @@index([orgId])
+  @@index([status])
+  @@map("programs")
+}
+
+model ProgramMilestone {
+  id          String    @id @default(uuid())
+  programId   String
+  program     Program   @relation(fields: [programId], references: [id])
+  title       String
+  description String?
+  targetDate  DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([programId])
+  @@map("program_milestones")
+}
+
+model Wallet {
+  id             String          @id @default(uuid())
+  ownerType      WalletOwnerType
+  ownerId        String          @unique
+  balance        Decimal         @default(0) @db.Decimal(18, 2)
+  reservedAmount Decimal         @default(0) @db.Decimal(18, 2)
+  currency       String          @default("USD")
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  // Polymorphic owner — integrity enforced at application layer via ownerType
+  // FK constraints removed: a single ownerId cannot satisfy user/org/program FKs simultaneously
+
+  debitEntries    LedgerEntry[] @relation("DebitWallet")
+  creditEntries   LedgerEntry[] @relation("CreditWallet")
+  allocationsFrom Allocation[]  @relation("SourceWallet")
+  allocationsTo   Allocation[]  @relation("DestWallet")
+
+  @@index([ownerType])
+  @@index([ownerId])
+  @@map("wallets")
+}
+
+//  LedgerEntry
+
+model LedgerEntry {
+  id             String   @id @default(uuid())
+  debitWalletId  String
+  creditWalletId String
+  amount         Decimal  @db.Decimal(18, 2)
+  currency       String   @default("USD")
+  referenceType  String // contribution | allocation | batch_release | settlement | reversal
+  referenceId    String // ID of the originating entity
+  description    String?
+  createdBy      String // actor user ID
+  createdAt      DateTime @default(now())
+  // NO updatedAt — intentional, this table is append-only
+
+  debitWallet  Wallet @relation("DebitWallet", fields: [debitWalletId], references: [id])
+  creditWallet Wallet @relation("CreditWallet", fields: [creditWalletId], references: [id])
+
+  @@index([debitWalletId, createdAt])
+  @@index([creditWalletId, createdAt])
+  @@index([referenceType, referenceId])
+  @@index([createdAt])
+  @@map("ledger_entries")
+}
+
+//Contribution, Allocation
+model Contribution {
+  id          String             @id @default(uuid())
+  donorId     String
+  donor       User               @relation(fields: [donorId], references: [id])
+  programId   String
+  program     Program            @relation(fields: [programId], references: [id])
+  amount      Decimal            @db.Decimal(18, 2)
+  currency    String             @default("USD")
+  paymentRef  String?
+  status      ContributionStatus @default(pending)
+  notes       String?
+  confirmedAt DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@index([donorId])
+  @@index([programId])
+  @@index([status])
+  @@map("contributions")
+}
+
+model Allocation {
+  id             String           @id @default(uuid())
+  programId      String
+  program        Program          @relation(fields: [programId], references: [id])
+  sourceWalletId String
+  sourceWallet   Wallet           @relation("SourceWallet", fields: [sourceWalletId], references: [id])
+  destWalletId   String
+  destWallet     Wallet           @relation("DestWallet", fields: [destWalletId], references: [id])
+  amount         Decimal          @db.Decimal(18, 2)
+  currency       String           @default("USD")
+  status         AllocationStatus @default(draft)
+  notes          String?
+  requestedBy    String
+  approvedBy     String?
+  approvedAt     DateTime?
+  releasedAt     DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  approvalRequest ApprovalRequest?
+
+  @@index([programId])
+  @@index([status])
+  @@index([sourceWalletId])
+  @@map("allocations")
+}
+
+//Beneficiary, DistributionBatch, BatchItem, BeneficiaryEntitlement
+
+model Beneficiary {
+  id                String       @id @default(uuid())
+  userId            String?      @unique
+  user              User?        @relation(fields: [userId], references: [id])
+  orgId             String
+  org               Organization @relation(fields: [orgId], references: [id])
+  // PII — encrypted at application layer (AES-256) before write
+  encryptedName     String
+  encryptedIdNumber String?
+  encryptedContact  String?
+  profileData       Json?
+  isActive          Boolean      @default(true)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  batchItems   BatchItem[]
+  entitlements BeneficiaryEntitlement[]
+
+  @@index([orgId])
+  @@map("beneficiaries")
+}
+
+model DistributionBatch {
+  id               String       @id @default(uuid())
+  programId        String
+  program          Program      @relation(fields: [programId], references: [id])
+  ngoOrgId         String
+  ngoOrg           Organization @relation(fields: [ngoOrgId], references: [id])
+  totalAmount      Decimal      @db.Decimal(18, 2)
+  beneficiaryCount Int          @default(0)
+  status           BatchStatus  @default(draft)
+  notes            String?
+  submittedBy      String?
+  approvedBy       String?
+  approvedAt       DateTime?
+  releasedAt       DateTime?
+  completedAt      DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  items           BatchItem[]
+  vendorOrders    VendorOrder[]
+  approvalRequest ApprovalRequest?
+
+  @@index([programId])
+  @@index([ngoOrgId])
+  @@index([status])
+  @@map("distribution_batches")
+}
+
+model BatchItem {
+  id                String            @id @default(uuid())
+  batchId           String
+  batch             DistributionBatch @relation(fields: [batchId], references: [id])
+  beneficiaryId     String
+  beneficiary       Beneficiary       @relation(fields: [beneficiaryId], references: [id])
+  entitlementAmount Decimal           @db.Decimal(18, 2)
+  status            BatchItemStatus   @default(pending)
+  deliveryProofUrl  String?
+  confirmedAt       DateTime?
+  notes             String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  entitlement BeneficiaryEntitlement?
+
+  @@index([batchId])
+  @@index([beneficiaryId])
+  @@index([status])
+  @@map("batch_items")
+}
+
+model BeneficiaryEntitlement {
+  id            String      @id @default(uuid())
+  beneficiaryId String
+  beneficiary   Beneficiary @relation(fields: [beneficiaryId], references: [id])
+  batchItemId   String      @unique
+  batchItem     BatchItem   @relation(fields: [batchItemId], references: [id])
+  amount        Decimal     @db.Decimal(18, 2)
+  fulfilledAt   DateTime?
+  createdAt     DateTime    @default(now())
+
+  @@index([beneficiaryId])
+  @@map("beneficiary_entitlements")
+}
+
+//— VendorOrder, Settlement, ApprovalRequest, AuditLog, Notification
+
+model VendorOrder {
+  id                  String            @id @default(uuid())
+  vendorOrgId         String
+  vendorOrg           Organization      @relation(fields: [vendorOrgId], references: [id])
+  batchId             String
+  batch               DistributionBatch @relation(fields: [batchId], references: [id])
+  programId           String
+  items               Json
+  totalValue          Decimal           @db.Decimal(18, 2)
+  status              VendorOrderStatus @default(issued)
+  deliveryProofUrl    String?
+  deliveryConfirmedAt DateTime?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  settlement Settlement?
+
+  @@index([vendorOrgId])
+  @@index([batchId])
+  @@map("vendor_orders")
+}
+
+model Settlement {
+  id            String           @id @default(uuid())
+  vendorOrderId String           @unique
+  vendorOrder   VendorOrder      @relation(fields: [vendorOrderId], references: [id])
+  amount        Decimal          @db.Decimal(18, 2)
+  status        SettlementStatus @default(pending)
+  payoutRef     String?
+  approvedBy    String?
+  settledAt     DateTime?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  approvalRequest ApprovalRequest?
+
+  @@index([status])
+  @@map("settlements")
+}
+
+model ApprovalRequest {
+  id             String         @id @default(uuid())
+  entityType     String // allocation | batch | settlement | user_activation
+  entityId       String @unique
+  action         String
+  status         ApprovalStatus @default(pending)
+  requestedById  String
+  requestedBy    User           @relation("RequestedBy", fields: [requestedById], references: [id])
+  assignedToRole UserRole
+  resolvedById   String?
+  resolvedBy     User?          @relation("ResolvedBy", fields: [resolvedById], references: [id])
+  resolvedAt     DateTime?
+  notes          String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  allocation Allocation?        @relation(fields: [entityId], references: [id], map: "approval_allocation_fk")
+  batch      DistributionBatch? @relation(fields: [entityId], references: [id], map: "approval_batch_fk")
+  settlement Settlement?        @relation(fields: [entityId], references: [id], map: "approval_settlement_fk")
+
+  @@index([entityType, entityId])
+  @@index([status, assignedToRole])
+  @@map("approval_requests")
+}
+
+model AuditLog {
+  id             String   @id @default(uuid())
+  actorId        String
+  actor          User     @relation(fields: [actorId], references: [id])
+  actorRole      UserRole
+  action         String
+  entityType     String
+  entityId       String
+  beforeSnapshot Json?
+  afterSnapshot  Json?
+  ipAddress      String?
+  createdAt      DateTime @default(now())
+  // NO updatedAt — intentional, append-only
+
+  @@index([entityType, entityId])
+  @@index([actorId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model Notification {
+  id          String    @id @default(uuid())
+  recipientId String
+  recipient   User      @relation(fields: [recipientId], references: [id])
+  type        String
+  title       String
+  body        String
+  payload     Json?
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([recipientId, readAt])
+  @@map("notifications")
+}

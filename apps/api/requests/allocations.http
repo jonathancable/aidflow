@@ -1,0 +1,41 @@
+### AidFlow API — Allocations endpoints
+# REST Client extension: click 'Send Request' above each block
+
+@baseUrl = http://localhost:4000/api/v1
+@token = REPLACE_WITH_JWT_TOKEN
+
+### List allocations (501 in Sprint 1)
+GET {{baseUrl}}/allocations
+Accept: application/json
+Authorization: Bearer {{token}}
+
+### Get allocation by ID (501 in Sprint 1)
+GET {{baseUrl}}/allocations/ALLOCATION_ID
+Accept: application/json
+Authorization: Bearer {{token}}
+
+### Create allocation (501 in Sprint 1)
+POST {{baseUrl}}/allocations
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "programId": "PROGRAM_ID",
+  "beneficiaryId": "BENEFICIARY_ID",
+  "amount": 200,
+  "currency": "USD",
+  "note": "Monthly food allowance"
+}
+
+### Approve allocation (501 in Sprint 1)
+POST {{baseUrl}}/allocations/ALLOCATION_ID/approve
+Authorization: Bearer {{token}}
+
+### Reject allocation (501 in Sprint 1)
+POST {{baseUrl}}/allocations/ALLOCATION_ID/reject
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "reason": "Duplicate entry"
+}

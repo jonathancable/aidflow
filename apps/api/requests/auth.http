@@ -1,0 +1,28 @@
+### AidFlow API — Auth endpoints
+# REST Client extension: click 'Send Request' above each block
+ 
+@baseUrl = http://localhost:4000/api/v1
+ 
+### Health check — should return 200 {"status":"ok"}
+GET http://localhost:4000/health
+Accept: application/json
+ 
+### Register (returns 501 in Sprint 1, real response in Sprint 3)
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+ 
+{
+  "email": "test@aidflow.org",
+  "password": "Test1234!",
+  "fullName": "Test User",
+  "role": "donor"
+}
+ 
+### Login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+ 
+{
+  "email": "test@aidflow.org",
+  "password": "Test1234!"
+}

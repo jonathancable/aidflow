@@ -1,0 +1,38 @@
+### AidFlow API — Distribution / Batches endpoints
+# REST Client extension: click 'Send Request' above each block
+
+@baseUrl = http://localhost:4000/api/v1
+@token = REPLACE_WITH_JWT_TOKEN
+
+### List batches (501 in Sprint 1)
+GET {{baseUrl}}/distribution
+Accept: application/json
+Authorization: Bearer {{token}}
+
+### Get batch by ID (501 in Sprint 1)
+GET {{baseUrl}}/distribution/BATCH_ID
+Accept: application/json
+Authorization: Bearer {{token}}
+
+### Create batch (501 in Sprint 1)
+POST {{baseUrl}}/distribution
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "programId": "PROGRAM_ID",
+  "name": "April 2026 Distribution",
+  "scheduledDate": "2026-04-15"
+}
+
+### Submit batch for approval (501 in Sprint 1)
+POST {{baseUrl}}/distribution/BATCH_ID/submit
+Authorization: Bearer {{token}}
+
+### Approve batch (501 in Sprint 1)
+POST {{baseUrl}}/distribution/BATCH_ID/approve
+Authorization: Bearer {{token}}
+
+### Release batch (501 in Sprint 1)
+POST {{baseUrl}}/distribution/BATCH_ID/release
+Authorization: Bearer {{token}}

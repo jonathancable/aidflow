@@ -1,0 +1,41 @@
+### AidFlow API — Vendors endpoints
+# REST Client extension: click 'Send Request' above each block
+
+@baseUrl = http://localhost:4000/api/v1
+@token = REPLACE_WITH_JWT_TOKEN
+
+### List vendors (501 in Sprint 1)
+GET {{baseUrl}}/vendors
+Accept: application/json
+Authorization: Bearer {{token}}
+
+### Get vendor by ID (501 in Sprint 1)
+GET {{baseUrl}}/vendors/VENDOR_ID
+Accept: application/json
+Authorization: Bearer {{token}}
+
+### Register vendor (501 in Sprint 1)
+POST {{baseUrl}}/vendors
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Acme Supplies Ltd",
+  "contactEmail": "contact@acme.example",
+  "phone": "+254700000000",
+  "location": "Nairobi, Kenya",
+  "category": "food"
+}
+
+### Update vendor (501 in Sprint 1)
+PATCH {{baseUrl}}/vendors/VENDOR_ID
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "category": "medical"
+}
+
+### Approve vendor (501 in Sprint 1)
+POST {{baseUrl}}/vendors/VENDOR_ID/approve
+Authorization: Bearer {{token}}
