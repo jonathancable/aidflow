@@ -121,7 +121,6 @@ model User {
   updatedAt    DateTime      @updatedAt
 
   contributions       Contribution[]
-  auditLogs           AuditLog[]
   notifications       Notification[]
   approvalRequests    ApprovalRequest[] @relation("RequestedBy")
   approvalResolutions ApprovalRequest[] @relation("ResolvedBy")
@@ -458,8 +457,7 @@ model ApprovalRequest {
 
 model AuditLog {
   id             String   @id @default(uuid())
-  actorId        String
-  actor          User     @relation(fields: [actorId], references: [id])
+  actorId        String   // no FK — audit history must outlive the actor account
   actorRole      UserRole
   action         String
   entityType     String

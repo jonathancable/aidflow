@@ -101,9 +101,6 @@ export const AuditService = {
         orderBy: { createdAt: "desc" },
         skip: (page - 1) * limit,
         take: limit,
-        include: {
-          actor: { select: { id: true, fullName: true, role: true } },
-        },
       }),
       prisma.auditLog.count({ where }),
     ]);
@@ -118,7 +115,6 @@ export const AuditService = {
         ...(filters.entityType ? { entityType: filters.entityType } : {}),
       },
       orderBy: { createdAt: "asc" },
-      include: { actor: { select: { fullName: true, role: true } } },
     });
   },
 };

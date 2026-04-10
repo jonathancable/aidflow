@@ -24,6 +24,7 @@ import {
 } from "@/middleware/errors";
 import { authenticate } from "@middleware/authenticate.middleware";
 import { authorize } from "@middleware/authorize.middleware";
+import { AuditService } from "@services/audit.service";
 import { env } from "@/config/env";
 
 const router = Router();
@@ -99,6 +100,19 @@ router.post(
 
       await updateLastLogin(user.id);
 
+      // Fire-and-forget audit — login success
+      AuditService.log({
+        context: {
+          actorId: user.id,
+          actorRole: user.role,
+          ...(req.ip !== undefined ? { ipAddress: req.ip } : {}),
+        },
+        action: "LOGIN",
+        entityType: "user",
+        entityId: user.id,
+        afterSnapshot: { email: user.email, role: user.role },
+      }).catch(() => {});
+
       // Refresh token in httpOnly cookie — never accessible to JavaScript
       res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
@@ -155,12 +169,26 @@ router.post(
 // POST /api/v1/auth/logout
 router.post(
   "/logout",
+  authenticate,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const token = req.cookies?.refreshToken as string | undefined;
       if (token) await JwtService.revokeRefreshToken(token);
 
       res.clearCookie("refreshToken", { path: "/api/v1/auth" });
+
+      // Fire-and-forget audit — logout
+      AuditService.log({
+        context: {
+          actorId: req.context!.userId,
+          actorRole: req.context!.role,
+          ...(req.ip !== undefined ? { ipAddress: req.ip } : {}),
+        },
+        action: "LOGOUT",
+        entityType: "user",
+        entityId: req.context!.userId,
+      }).catch(() => {});
+
       res.json({ success: true, data: { message: "Logged out successfully" } });
     } catch (err) {
       next(err);
