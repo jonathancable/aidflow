@@ -26,7 +26,14 @@ export async function findLedgerEntriesByWallet(
   const { page, limit, from, to } = params;
   const where = {
     OR: [{ debitWalletId: walletId }, { creditWalletId: walletId }],
-    ...(from || to ? { createdAt: { gte: from, lte: to } } : {}),
+    ...(from || to
+      ? {
+          createdAt: {
+            ...(from ? { gte: from } : {}),
+            ...(to ? { lte: to } : {}),
+          },
+        }
+      : {}),
   };
   const [entries, total] = await prisma.$transaction([
     prisma.ledgerEntry.findMany({

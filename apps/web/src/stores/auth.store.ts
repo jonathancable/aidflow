@@ -1,12 +1,14 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type { UserRole } from '@aidflow/shared';
 
 interface AuthUser {
-  id:     string;
-  role:   UserRole;
-  orgId:  string | null;
-  email:  string;
-  name:   string;
+  id:       string;
+  role:     UserRole;
+  orgId:    string | null;
+  email:    string;
+  name:     string;
+  walletId: string | null;
 }
 
 interface AuthStore {
@@ -18,11 +20,19 @@ interface AuthStore {
   logout:      () => void;
 }
 
-export const useAuthStore = create<AuthStore>((set) => ({
-  user:        null,
-  accessToken: null,
-  isLoading:   true,
-  setSession:  (user, accessToken) => set({ user, accessToken }),
-  setAccessToken: (accessToken) => set({ accessToken }),
-  logout:      () => set({ user: null, accessToken: null }),
-}));
+export const useAuthStore = create<AuthStore>()(
+  persist(
+    (set) => ({
+      user:        null,
+      accessToken: null,
+      isLoading:   false,
+      setSession:  (user, accessToken) => set({ user, accessToken }),
+      setAccessToken: (accessToken) => set({ accessToken }),
+      logout:      () => set({ user: null, accessToken: null }),
+    }),
+    {
+      name: 'aidflow-auth',
+      partialize: (state) => ({ user: state.user, accessToken: state.accessToken }),
+    },
+  ),
+);

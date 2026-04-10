@@ -1,36 +1,23 @@
-### AidFlow API — Contributions endpoints
-# REST Client extension: click 'Send Request' above each block
-
+### ── apps/api/requests/contributions.http ────────────────────
 @baseUrl = http://localhost:4000/api/v1
-@token = REPLACE_WITH_JWT_TOKEN
-
-### List contributions (501 in Sprint 1)
-GET {{baseUrl}}/contributions
-Accept: application/json
-Authorization: Bearer {{token}}
-
-### Get contribution by ID (501 in Sprint 1)
-GET {{baseUrl}}/contributions/CONTRIBUTION_ID
-Accept: application/json
-Authorization: Bearer {{token}}
-
-### Create contribution (501 in Sprint 1)
+@token = <paste_donor_access_token_here>
+ 
+### Create a contribution (Donor only)
 POST {{baseUrl}}/contributions
-Content-Type: application/json
 Authorization: Bearer {{token}}
-
+Content-Type: application/json
+ 
 {
-  "programId": "PROGRAM_ID",
+  "programId": "seed-program-001",
   "amount": 5000,
   "currency": "USD",
-  "donorNote": "For food distribution"
+  "notes": "Monthly recurring donation"
 }
-
-### Update contribution status (501 in Sprint 1)
-PATCH {{baseUrl}}/contributions/CONTRIBUTION_ID/status
-Content-Type: application/json
+ 
+### List my contributions (Donor sees own only)
+GET {{baseUrl}}/contributions
 Authorization: Bearer {{token}}
-
-{
-  "status": "confirmed"
-}
+ 
+### Get single contribution
+GET {{baseUrl}}/contributions/<contribution_id>
+Authorization: Bearer {{token}}

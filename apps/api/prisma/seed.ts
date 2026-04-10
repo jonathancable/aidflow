@@ -3,6 +3,16 @@ import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
+// Deterministic UUIDs for stable seed references across resets
+const SEED = {
+  ngoOrg:    "00000000-0000-4000-8000-000000000001",
+  vendorOrg: "00000000-0000-4000-8000-000000000002",
+  program:   "00000000-0000-4000-8000-000000000010",
+  ben001:    "00000000-0000-4000-8000-000000000020",
+  ben002:    "00000000-0000-4000-8000-000000000021",
+  ben003:    "00000000-0000-4000-8000-000000000022",
+} as const;
+
 async function main() {
   // Safety guard — seed must never run in production
   if (process.env.NODE_ENV === "production") {
@@ -12,11 +22,19 @@ async function main() {
   console.log("Seeding AidFlow database...");
   const hash = (p: string) => bcrypt.hashSync(p, 10);
 
+  // Wipe all data so re-runs start clean (dev / test environments only)
+  await prisma.$executeRaw`
+    TRUNCATE TABLE
+      notifications, audit_logs, approval_requests, settlements, vendor_orders,
+      beneficiary_entitlements, batch_items, distribution_batches, ledger_entries,
+      allocations, contributions, program_milestones, wallets, programs, beneficiaries,
+      refresh_tokens, users, organizations
+    CASCADE
+  `;
+
   // 1. System users ─────────────────────────────────────────────
-  const admin = await prisma.user.upsert({
-    where: { email: "admin@aidflow.org" },
-    update: {},
-    create: {
+  const admin = await prisma.user.create({
+    data: {
       email: "admin@aidflow.org",
       passwordHash: hash("Admin1234!"),
       fullName: "System Admin",
@@ -25,10 +43,8 @@ async function main() {
     },
   });
 
-  await prisma.user.upsert({
-    where: { email: "controller@aidflow.org" },
-    update: {},
-    create: {
+  await prisma.user.create({
+    data: {
       email: "controller@aidflow.org",
       passwordHash: hash("Controller1234!"),
       fullName: "System Controller",
@@ -38,11 +54,9 @@ async function main() {
   });
 
   // 2. NGO organization + user ──────────────────────────────────
-  const ngoOrg = await prisma.organization.upsert({
-    where: { id: "seed-ngo-org-001" },
-    update: {},
-    create: {
-      id: "seed-ngo-org-001",
+  const ngoOrg = await prisma.organization.create({
+    data: {
+      id: SEED.ngoOrg,
       name: "Hope Foundation",
       type: "ngo",
       verificationStatus: "verified",
@@ -51,10 +65,8 @@ async function main() {
     },
   });
 
-  await prisma.user.upsert({
-    where: { email: "ngo@aidflow.org" },
-    update: {},
-    create: {
+  await prisma.user.create({
+    data: {
       email: "ngo@aidflow.org",
       passwordHash: hash("NGO1234!"),
       fullName: "NGO Manager",
@@ -65,10 +77,8 @@ async function main() {
   });
 
   // 3. Donor user + wallet ───────────────────────────────────────
-  const donor = await prisma.user.upsert({
-    where: { email: "donor@aidflow.org" },
-    update: {},
-    create: {
+  const donor = await prisma.user.create({
+    data: {
       email: "donor@aidflow.org",
       passwordHash: hash("Donor1234!"),
       fullName: "Jane Donor",
@@ -77,10 +87,8 @@ async function main() {
     },
   });
 
-  await prisma.wallet.upsert({
-    where: { ownerId: donor.id },
-    update: {},
-    create: {
+  await prisma.wallet.create({
+    data: {
       ownerType: "donor",
       ownerId: donor.id,
       balance: 50000,
@@ -89,11 +97,9 @@ async function main() {
   });
 
   // 4. Program + wallet ─────────────────────────────────────────
-  const program = await prisma.program.upsert({
-    where: { id: "seed-program-001" },
-    update: {},
-    create: {
-      id: "seed-program-001",
+  const program = await prisma.program.create({
+    data: {
+      id: SEED.program,
       name: "West Africa School Feeding Initiative",
       type: "feeding",
       status: "active",
@@ -105,10 +111,8 @@ async function main() {
     },
   });
 
-  await prisma.wallet.upsert({
-    where: { ownerId: program.id },
-    update: {},
-    create: {
+  await prisma.wallet.create({
+    data: {
       ownerType: "program",
       ownerId: program.id,
       balance: 0,
@@ -117,11 +121,9 @@ async function main() {
   });
 
   // 5. Vendor organization ──────────────────────────────────────
-  await prisma.organization.upsert({
-    where: { id: "seed-vendor-org-001" },
-    update: {},
-    create: {
-      id: "seed-vendor-org-001",
+  await prisma.organization.create({
+    data: {
+      id: SEED.vendorOrg,
       name: "MediSupply Co.",
       type: "vendor",
       verificationStatus: "verified",
@@ -131,15 +133,13 @@ async function main() {
 
   // 6. Sample beneficiaries (PII pre-encrypted for dev only) ────
   const bens = [
-    { id: "seed-ben-001", name: "enc:Amara Diallo", idNum: "enc:GH-001234" },
-    { id: "seed-ben-002", name: "enc:Kwame Asante", idNum: "enc:GH-001235" },
-    { id: "seed-ben-003", name: "enc:Fatima Toure", idNum: "enc:GH-001236" },
+    { id: SEED.ben001, name: "enc:Amara Diallo",  idNum: "enc:GH-001234" },
+    { id: SEED.ben002, name: "enc:Kwame Asante",  idNum: "enc:GH-001235" },
+    { id: SEED.ben003, name: "enc:Fatima Toure",  idNum: "enc:GH-001236" },
   ];
   for (const b of bens) {
-    await prisma.beneficiary.upsert({
-      where: { id: b.id },
-      update: {},
-      create: {
+    await prisma.beneficiary.create({
+      data: {
         id: b.id,
         orgId: ngoOrg.id,
         encryptedName: b.name,
@@ -154,6 +154,7 @@ async function main() {
   console.log("  Controller: controller@aidflow.org / Controller1234!");
   console.log("  Donor:      donor@aidflow.org      / Donor1234!");
   console.log("  NGO:        ngo@aidflow.org        / NGO1234!");
+  console.log(`  Program ID: ${SEED.program}`);
 }
 
 main()

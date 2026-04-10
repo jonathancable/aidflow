@@ -1,6 +1,7 @@
 generator client {
-  provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
+  provider      = "prisma-client-js"
+  output        = "../src/generated/prisma"
+  binaryTargets = ["native", "linux-musl", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -299,8 +300,6 @@ model Allocation {
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
 
-  approvalRequest ApprovalRequest?
-
   @@index([programId])
   @@index([status])
   @@index([sourceWalletId])
@@ -351,8 +350,6 @@ model DistributionBatch {
 
   items           BatchItem[]
   vendorOrders    VendorOrder[]
-  approvalRequest ApprovalRequest?
-
   @@index([programId])
   @@index([ngoOrgId])
   @@index([status])
@@ -431,8 +428,6 @@ model Settlement {
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
 
-  approvalRequest ApprovalRequest?
-
   @@index([status])
   @@map("settlements")
 }
@@ -453,9 +448,8 @@ model ApprovalRequest {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
-  allocation Allocation?        @relation(fields: [entityId], references: [id], map: "approval_allocation_fk")
-  batch      DistributionBatch? @relation(fields: [entityId], references: [id], map: "approval_batch_fk")
-  settlement Settlement?        @relation(fields: [entityId], references: [id], map: "approval_settlement_fk")
+  // Polymorphic entity reference — integrity enforced at application layer via entityType
+  // FK constraints removed: a single entityId cannot satisfy allocation, batch, and settlement FKs simultaneously
 
   @@index([entityType, entityId])
   @@index([status, assignedToRole])

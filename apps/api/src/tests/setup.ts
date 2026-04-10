@@ -1,5 +1,8 @@
-import { config } from 'dotenv';
-import path from 'path';
+// apps/api/src/tests/setup.ts
+// Runs before every test file
+/// <reference types="vitest/globals" />
+import { prisma } from "@/lib/prisma";
 
-// Load .env.test before any module imports env vars
-config({ path: path.resolve(__dirname, '../../.env.test'), override: true });
+afterAll(async () => {
+  await prisma.$disconnect();
+});

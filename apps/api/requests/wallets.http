@@ -1,25 +1,18 @@
-### AidFlow API — Wallets endpoints
-# REST Client extension: click 'Send Request' above each block
-
+### ── apps/api/requests/wallets.http ──────────────────────────
+### Run in SQLTools to find wallet IDs:
+### SELECT id, owner_type, owner_id, balance, reserved_amount FROM wallets;
 @baseUrl = http://localhost:4000/api/v1
-@token = REPLACE_WITH_JWT_TOKEN
+@token = <paste_your_access_token_here>
+@walletId = <paste_wallet_id_here>
 
-### List wallets (501 in Sprint 1)
-GET {{baseUrl}}/wallets
-Accept: application/json
+### Get wallet balance
+GET {{baseUrl}}/wallets/{{walletId}}
 Authorization: Bearer {{token}}
 
-### Get wallet by ID (501 in Sprint 1)
-GET {{baseUrl}}/wallets/WALLET_ID
-Accept: application/json
+### Get wallet transaction history (paginated)
+GET {{baseUrl}}/wallets/{{walletId}}/transactions?page=1&limit=20
 Authorization: Bearer {{token}}
 
-### Get wallet balance (501 in Sprint 1)
-GET {{baseUrl}}/wallets/WALLET_ID/balance
-Accept: application/json
-Authorization: Bearer {{token}}
-
-### Get wallet ledger (501 in Sprint 1)
-GET {{baseUrl}}/wallets/WALLET_ID/ledger
-Accept: application/json
+### Get wallet history with date filter
+GET {{baseUrl}}/wallets/{{walletId}}/transactions?from=2025-01-01&to=2025-12-31
 Authorization: Bearer {{token}}

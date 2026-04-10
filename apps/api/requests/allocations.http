@@ -1,41 +1,42 @@
-### AidFlow API — Allocations endpoints
-# REST Client extension: click 'Send Request' above each block
-
+### ── apps/api/requests/allocations.http ──────────────────────
 @baseUrl = http://localhost:4000/api/v1
-@token = REPLACE_WITH_JWT_TOKEN
-
-### List allocations (501 in Sprint 1)
-GET {{baseUrl}}/allocations
-Accept: application/json
-Authorization: Bearer {{token}}
-
-### Get allocation by ID (501 in Sprint 1)
-GET {{baseUrl}}/allocations/ALLOCATION_ID
-Accept: application/json
-Authorization: Bearer {{token}}
-
-### Create allocation (501 in Sprint 1)
+@adminToken   = <admin_token>
+@controlToken = <controller_token>
+ 
+### Create allocation (Admin)
 POST {{baseUrl}}/allocations
+Authorization: Bearer {{adminToken}}
 Content-Type: application/json
-Authorization: Bearer {{token}}
-
+ 
 {
-  "programId": "PROGRAM_ID",
-  "beneficiaryId": "BENEFICIARY_ID",
-  "amount": 200,
-  "currency": "USD",
-  "note": "Monthly food allowance"
+  "programId":      "seed-program-001",
+  "sourceWalletId": "<donor_wallet_id>",
+  "destWalletId":   "<program_wallet_id>",
+  "amount":         5000,
+  "notes":          "Q1 allocation from Jane Donor"
+}
+ 
+### Get approval queue (Controller)
+GET {{baseUrl}}/approvals?status=pending&assignedToRole=system_controller
+Authorization: Bearer {{controlToken}}
+ 
+### Approve an allocation (Controller)
+PATCH {{baseUrl}}/approvals/<approval_id>
+Authorization: Bearer {{controlToken}}
+Content-Type: application/json
+ 
+{
+  "decision": "approved",
+  "notes": "Verified donor wallet balance and program eligibility"
+}
+ 
+### Reject an allocation (Controller)
+PATCH {{baseUrl}}/approvals/<approval_id>
+Authorization: Bearer {{controlToken}}
+Content-Type: application/json
+ 
+{
+  "decision": "rejected",
+  "notes": "Insufficient documentation provided"
 }
 
-### Approve allocation (501 in Sprint 1)
-POST {{baseUrl}}/allocations/ALLOCATION_ID/approve
-Authorization: Bearer {{token}}
-
-### Reject allocation (501 in Sprint 1)
-POST {{baseUrl}}/allocations/ALLOCATION_ID/reject
-Content-Type: application/json
-Authorization: Bearer {{token}}
-
-{
-  "reason": "Duplicate entry"
-}
