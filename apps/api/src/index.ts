@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 import { env } from "./config/env";
 import { requestLogger } from "./middleware/logger.middleware";
 import { errorHandler } from "./middleware/error.middleware";
+import { generalLimiter, authLimiter } from "./middleware/security.middleware";
 import { authRouter } from "./routes/auth.routes";
 import { approvalsRouter } from "./routes/approvals.routes";
 import { programsRouter } from "./routes/programs.routes";
@@ -40,18 +41,59 @@ reconciliationQueue.add(
 
 const app = express();
 
-// Security headers — runs on every request
-app.use(helmet());
+// 1. Helmet — security headers on every response
 app.use(
-  cors({
-    origin: env.CORS_ORIGINS.split(","),
-    credentials: true,
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:"],
+        connectSrc: ["'self'"],
+        fontSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        frameSrc: ["'none'"],
+      },
+    },
+    hsts: {
+      maxAge: 31536000, // 1 year
+      includeSubDomains: true,
+      preload: true,
+    },
   }),
 );
+
+// 2. CORS — explicit allowlist, no wildcard
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      const allowed = env.CORS_ORIGINS.split(",").map((o) => o.trim());
+      if (!origin || allowed.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS: " + origin));
+      }
+    },
+    credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization"],
+    exposedHeaders: ["X-Total-Count"],
+    maxAge: 86400, // pre-flight cache 24h
+  }),
+);
+
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(requestLogger);
+
+// 3. General rate limit — all API routes (after CORS so pre-flight OPTIONS is not counted)
+app.use("/api/v1", generalLimiter);
+
+// 4. Auth-specific rate limit — stricter cap on top of the general limit
+app.use("/api/v1/auth/login", authLimiter);
+app.use("/api/v1/auth/register", authLimiter);
+app.use("/api/v1/auth/refresh", authLimiter);
 
 // Routes
 app.use("/api/v1/auth", authRouter);
