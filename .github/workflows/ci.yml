@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: ['**']
+    branches: ["**"]
   pull_request:
-    branches: ['main', 'develop']
+    branches: ["main", "develop"]
 
 jobs:
   typecheck:
@@ -12,9 +12,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
-        with: { version: 9 }
       - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: 'pnpm' }
+        with: { node-version: 20, cache: "pnpm" }
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
 
@@ -25,7 +24,7 @@ jobs:
       - uses: pnpm/action-setup@v4
         with: { version: 9 }
       - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: 'pnpm' }
+        with: { node-version: 20, cache: "pnpm" }
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
 
@@ -35,28 +34,28 @@ jobs:
       postgres:
         image: postgres:15-alpine
         env:
-          POSTGRES_USER:     aidflow
+          POSTGRES_USER: aidflow
           POSTGRES_PASSWORD: aidflow_test
-          POSTGRES_DB:       aidflow_test
-        ports: ['5432:5432']
+          POSTGRES_DB: aidflow_test
+        ports: ["5432:5432"]
         options: --health-cmd pg_isready --health-interval 5s --health-retries 5
       redis:
         image: redis:7-alpine
-        ports: ['6379:6379']
+        ports: ["6379:6379"]
     env:
-      NODE_ENV:           test
-      DATABASE_URL:       postgresql://aidflow:aidflow_test@localhost:5432/aidflow_test
-      REDIS_URL:          redis://localhost:6379
-      JWT_ACCESS_SECRET:  ci_test_secret_min_32_chars_xxxxxxxxx
+      NODE_ENV: test
+      DATABASE_URL: postgresql://aidflow:aidflow_test@localhost:5432/aidflow_test
+      REDIS_URL: redis://localhost:6379
+      JWT_ACCESS_SECRET: ci_test_secret_min_32_chars_xxxxxxxxx
       JWT_REFRESH_SECRET: ci_test_refresh_secret_min_32_chars_x
-      ENCRYPTION_KEY:     0000000000000000000000000000000000000000000000000000000000000000
-      CORS_ORIGINS:       http://localhost:5173
+      ENCRYPTION_KEY: 0000000000000000000000000000000000000000000000000000000000000000
+      CORS_ORIGINS: http://localhost:5173
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
         with: { version: 9 }
       - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: 'pnpm' }
+        with: { node-version: 20, cache: "pnpm" }
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @aidflow/api exec prisma migrate deploy
       - run: pnpm test
