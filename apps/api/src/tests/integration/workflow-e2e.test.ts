@@ -3,6 +3,12 @@ import { describe, it, expect, beforeAll } from "vitest";
 import request from "supertest";
 import { app } from "@/index";
 import { prisma } from "@/lib/prisma";
+import bcrypt from "bcryptjs";
+
+// Unique tag per run so this test is fully self-contained and never
+// depends on the seed script having run beforehand.
+const TAG = `e2e-${Date.now()}`;
+const PASSWORD = "E2eTest1234!";
 
 describe("End-to-end: Contribute → Allocate → Approve", () => {
   let donorToken: string;
@@ -15,34 +21,101 @@ describe("End-to-end: Contribute → Allocate → Approve", () => {
   let approvalId: string;
 
   beforeAll(async () => {
-    // Login all three roles
+    const passwordHash = await bcrypt.hash(PASSWORD, 10);
+
+    // Create isolated test users for this run
+    const [admin, , donor] = await Promise.all([
+      prisma.user.create({
+        data: {
+          email: `admin-${TAG}@aidflow.test`,
+          passwordHash,
+          fullName: "E2E Admin",
+          role: "system_admin",
+          status: "active",
+        },
+      }),
+      prisma.user.create({
+        data: {
+          email: `controller-${TAG}@aidflow.test`,
+          passwordHash,
+          fullName: "E2E Controller",
+          role: "system_controller",
+          status: "active",
+        },
+      }),
+      prisma.user.create({
+        data: {
+          email: `donor-${TAG}@aidflow.test`,
+          passwordHash,
+          fullName: "E2E Donor",
+          role: "donor",
+          status: "active",
+        },
+      }),
+    ]);
+
+    // Create NGO org and active program
+    const org = await prisma.organization.create({
+      data: {
+        name: `E2E Org ${TAG}`,
+        type: "ngo",
+        verificationStatus: "verified",
+        region: "Test Region",
+        contactEmail: `org-${TAG}@aidflow.test`,
+      },
+    });
+
+    const program = await prisma.program.create({
+      data: {
+        name: `E2E Program ${TAG}`,
+        type: "feeding",
+        status: "active",
+        budgetTarget: 100000,
+        fundedAmount: 0,
+        region: "Test Region",
+        orgId: org.id,
+        createdBy: admin.id,
+      },
+    });
+    programId = program.id;
+
+    // Create donor wallet (balance: 50,000) and program wallet (balance: 0)
+    const [donorWallet, programWallet] = await Promise.all([
+      prisma.wallet.create({
+        data: {
+          ownerType: "donor",
+          ownerId: donor.id,
+          balance: 50000,
+          currency: "USD",
+        },
+      }),
+      prisma.wallet.create({
+        data: {
+          ownerType: "program",
+          ownerId: program.id,
+          balance: 0,
+          currency: "USD",
+        },
+      }),
+    ]);
+    donorWalletId = donorWallet.id;
+    programWalletId = programWallet.id;
+
+    // Log in all three roles
     const [dRes, aRes, cRes] = await Promise.all([
       request(app)
         .post("/api/v1/auth/login")
-        .send({ email: "donor@aidflow.org", password: "Donor1234!" }),
+        .send({ email: `donor-${TAG}@aidflow.test`, password: PASSWORD }),
       request(app)
         .post("/api/v1/auth/login")
-        .send({ email: "admin@aidflow.org", password: "Admin1234!" }),
+        .send({ email: `admin-${TAG}@aidflow.test`, password: PASSWORD }),
       request(app)
         .post("/api/v1/auth/login")
-        .send({ email: "controller@aidflow.org", password: "Controller1234!" }),
+        .send({ email: `controller-${TAG}@aidflow.test`, password: PASSWORD }),
     ]);
     donorToken = dRes.body.data.accessToken;
     adminToken = aRes.body.data.accessToken;
     controllerToken = cRes.body.data.accessToken;
-
-    // Resolve seed program UUID (slug is not a valid UUID for schema validation)
-    const program = await prisma.program.findFirst({
-      where: { status: "active" },
-    });
-    programId = program!.id;
-
-    // Get wallet IDs
-    const wallets = await prisma.wallet.findMany({
-      where: { ownerType: { in: ["donor", "program"] } },
-    });
-    donorWalletId = wallets.find((w) => w.ownerType === "donor")!.id;
-    programWalletId = wallets.find((w) => w.ownerType === "program")!.id;
   });
 
   it("donor can contribute to an active program", async () => {
