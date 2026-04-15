@@ -1,0 +1,39 @@
+# .github/workflows/deploy-production.yml
+name: Deploy to production
+
+on:
+  workflow_dispatch: # manual trigger only
+    inputs:
+      image-tag:
+        description: "Docker image tag to deploy (e.g. sha-abc1234)"
+        required: true
+
+jobs:
+  deploy-production:
+    runs-on: ubuntu-latest
+    environment: production # requires manual approval in GitHub Settings
+    steps:
+      - name: Deploy to production via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: PROD_HOST
+          username: PROD_USER
+          key: PROD_SSH_KEY
+          script: |
+            cd /opt/aidflow
+            echo "GITHUB_TOKEN" | docker login ghcr.io -u GITHUB_ACTOR --password-stdin
+            # Pull the specific image tag — never use :latest in production
+            docker pull ghcr.io/GH_REPO/aidflow-api:INPUT_IMAGE_TAG
+            # Zero-downtime deploy: bring up new container before stopping old
+            docker-compose -f docker-compose.prod.yml up -d --no-deps --scale api=2 api
+            sleep 30
+            docker-compose -f docker-compose.prod.yml up -d --no-deps --scale api=1 api
+            curl -f http://localhost:4000/health || exit 1
+            echo "Production deploy complete: INPUT_IMAGE_TAG"
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: INPUT_IMAGE_TAG
+          name: "Production release INPUT_IMAGE_TAG"
+          body: "Deployed to production from staging. Image: INPUT_IMAGE_TAG"

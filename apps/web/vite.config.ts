@@ -13,6 +13,7 @@ export default defineConfig({
       '@stores':        path.resolve(__dirname, 'src/stores'),
       '@pages':         path.resolve(__dirname, 'src/pages'),
       '@lib':           path.resolve(__dirname, 'src/lib'),
+      '@aidflow/shared': path.resolve(__dirname, '../../packages/shared/src/index.ts'),
     },
   },
   server: {

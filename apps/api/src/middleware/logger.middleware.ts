@@ -20,8 +20,8 @@ export const requestLogger = (
       path:       req.path,
       status:     res.statusCode,
       duration_ms:Date.now() - start,
-      user_id:    (req as any).context?.userId ?? null,
-      role:       (req as any).context?.role ?? null,
+      user_id:    req.context?.userId ?? null,
+      role:       req.context?.role ?? null,
       ip:         req.ip,
     });
   });

@@ -1,0 +1,64 @@
+### ── apps/api/requests/auth.http ──────────────────────────────
+### Run each request in order — verify the expected result before proceeding
+@baseUrl = http://localhost:4000/api/v1
+@contentType = Content-Type: application/json
+
+### 1. Register — new donor account
+### Expect: 201  user.status = "pending"
+POST {{baseUrl}}/auth/register
+{{contentType}}
+
+{
+  "email": "newdonor@test.com",
+  "password": "Donor1234!",
+  "fullName": "New Donor",
+  "role": "donor"
+}
+
+###
+### 2. Activate — run in SQLTools before continuing
+###    UPDATE users SET status = 'active' WHERE email = 'newdonor@test.com';
+###
+
+### 3. Login — returns accessToken in body, refreshToken in httpOnly cookie
+### Expect: 200  accessToken in body, Set-Cookie: refreshToken=... HttpOnly
+# @name loginResult
+POST {{baseUrl}}/auth/login
+{{contentType}}
+
+{
+  "email": "newdonor@test.com",
+  "password": "Donor1234!"
+}
+
+### 4. Me — protected route, requires Bearer token
+### Expect: 200  user object with email = "newdonor@test.com"
+# @prompt accessToken Enter the accessToken from step 3
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{accessToken}}
+
+### 5. Me — no token
+### Expect: 401  error.code = "UNAUTHORIZED"
+GET {{baseUrl}}/auth/me
+
+### 6. Refresh — uses httpOnly cookie automatically
+### Expect: 200  new accessToken in body, rotated refreshToken cookie
+POST {{baseUrl}}/auth/refresh
+{{contentType}}
+
+### 7. Logout — clears the refresh token cookie
+### Expect: 200  message = "Logged out successfully", cookie cleared
+POST {{baseUrl}}/auth/logout
+{{contentType}}
+
+### 8. Duplicate registration — same email
+### Expect: 409  error.code = "CONFLICT"
+POST {{baseUrl}}/auth/register
+{{contentType}}
+
+{
+  "email": "newdonor@test.com",
+  "password": "Donor1234!",
+  "fullName": "Duplicate",
+  "role": "donor"
+}

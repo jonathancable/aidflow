@@ -1,0 +1,25 @@
+### AidFlow API — Reports endpoints
+# REST Client extension: click 'Send Request' above each block
+
+@baseUrl = http://localhost:4000/api/v1
+@token = REPLACE_WITH_JWT_TOKEN
+
+### Program summary report (501 in Sprint 1)
+GET {{baseUrl}}/reports/programs/PROGRAM_ID/summary
+Accept: application/json
+Authorization: Bearer {{token}}
+
+### Distribution report (501 in Sprint 1)
+GET {{baseUrl}}/reports/distribution?from=2026-01-01&to=2026-04-30
+Accept: application/json
+Authorization: Bearer {{token}}
+
+### Beneficiary reach report (501 in Sprint 1)
+GET {{baseUrl}}/reports/beneficiaries?programId=PROGRAM_ID
+Accept: application/json
+Authorization: Bearer {{token}}
+
+### Audit log (501 in Sprint 1)
+GET {{baseUrl}}/reports/audit?entity=batch&entityId=BATCH_ID
+Accept: application/json
+Authorization: Bearer {{token}}

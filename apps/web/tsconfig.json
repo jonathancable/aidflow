@@ -1,0 +1,23 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@/*":           ["src/*"],
+      "@features/*":   ["src/features/*"],
+      "@components/*": ["src/components/*"],
+      "@hooks/*":      ["src/hooks/*"],
+      "@stores/*":     ["src/stores/*"],
+      "@pages/*":      ["src/pages/*"],
+      "@lib/*":        ["src/lib/*"]
+    },
+    "noEmit": true
+  },
+  "include": ["src/**/*", "vite.config.ts"],
+  "exclude": ["node_modules"]
+}

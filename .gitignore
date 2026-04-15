@@ -6,17 +6,24 @@ dist/
 .turbo/
 
 # Environment secrets — never commit these
+.env
 .env.local
 .env.*.local
+apps/**/.env
 apps/**/.env.local
 apps/**/.env.*.local
 
 # OS / editor
 .DS_Store
 Thumbs.db
-.vscode/settings.json
+.vscode/*.local.json
 
 # Logs
 *.log
 npm-debug.log*
 pnpm-debug.log*
+apps/api/src/generated/
+
+# Playwright
+apps/web/test-results/
+apps/web/playwright-report/

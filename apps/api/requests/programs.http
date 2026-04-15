@@ -1,0 +1,29 @@
+### ── apps/api/requests/programs.http ─────────────────────────
+@baseUrl = http://localhost:4000/api/v1
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyNDNiYzAxZi04ODFkLTQ3YTUtYWE0NC1iMjJhMTQzYWExZjMiLCJyb2xlIjoiZG9ub3IiLCJvcmdJZCI6bnVsbCwidHlwZSI6ImFjY2VzcyIsImlhdCI6MTc3NTY3NTY2OSwiZXhwIjoxNzc1Njc2NTY5LCJhdWQiOiJhaWRmbG93LWNsaWVudCIsImlzcyI6ImFpZGZsb3ctYXBpIn0.OI9w_WTZUAP6MhLrnuWHAUaLxvM_EWVuHot9Mu-b3F0
+ 
+### List all programs
+GET {{baseUrl}}/programs
+Authorization: Bearer {{token}}
+ 
+### Get a single program with funding status
+GET {{baseUrl}}/programs/seed-program-001
+Authorization: Bearer {{token}}
+ 
+### Create a program (Admin only)
+POST {{baseUrl}}/programs
+Authorization: Bearer {{token}}
+Content-Type: application/json
+ 
+{
+  "name": "Emergency Relief Fund Q1",
+  "type": "emergency",
+  "budgetTarget": 50000,
+  "region": "East Africa",
+  "description": "Emergency food relief for drought-affected areas"
+}
+ 
+### Get program funding progress
+GET {{baseUrl}}/programs/seed-program-001/funding-status
+Authorization: Bearer {{token}}
+

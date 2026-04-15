@@ -1,0 +1,33 @@
+### AidFlow API — Users endpoints
+# REST Client extension: click 'Send Request' above each block
+
+@baseUrl = http://localhost:4000/api/v1
+@token = REPLACE_WITH_JWT_TOKEN
+
+### List users (501 in Sprint 1)
+GET {{baseUrl}}/users
+Accept: application/json
+Authorization: Bearer {{token}}
+
+### Get user by ID (501 in Sprint 1)
+GET {{baseUrl}}/users/USER_ID
+Accept: application/json
+Authorization: Bearer {{token}}
+
+### Get current user profile (501 in Sprint 1)
+GET {{baseUrl}}/users/me
+Accept: application/json
+Authorization: Bearer {{token}}
+
+### Update user role (501 in Sprint 1)
+PATCH {{baseUrl}}/users/USER_ID/role
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "role": "ngo_admin"
+}
+
+### Deactivate user (501 in Sprint 1)
+POST {{baseUrl}}/users/USER_ID/deactivate
+Authorization: Bearer {{token}}

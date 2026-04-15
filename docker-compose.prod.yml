@@ -1,0 +1,54 @@
+# docker-compose.prod.yml — production compose (no volume mounts, no hot reload)
+# On the server: place all env vars in /opt/aidflow/.env.production (see .env.production.example)
+
+
+services:
+  api:
+    image: ${API_IMAGE:-ghcr.io/jonathan/aidflow/aidflow-api:main}
+    ports:
+      - "4000:4000"
+    env_file:
+      - .env.production
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: aidflow
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: aidflow_prod
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aidflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_prod_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_prod_data:
+  redis_prod_data:

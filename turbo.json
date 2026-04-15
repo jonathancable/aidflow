@@ -11,7 +11,15 @@
     "lint": {},
     "test": {
       "dependsOn": ["^build"],
-      "env": ["DATABASE_URL", "JWT_SECRET"]
+      "env": [
+        "DATABASE_URL",
+        "REDIS_URL",
+        "JWT_ACCESS_SECRET",
+        "JWT_REFRESH_SECRET",
+        "ENCRYPTION_KEY",
+        "NODE_ENV",
+        "CORS_ORIGINS"
+      ]
     },
     "dev": {
       "cache": false,

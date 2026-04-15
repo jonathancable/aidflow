@@ -1,0 +1,34 @@
+### ── apps/api/requests/vendors.http ──────────────────────────
+@baseUrl = http://localhost:4000/api/v1
+@ngoToken        = <ngo_token>
+@vendorToken     = <vendor_token>
+@controllerToken = <controller_token>
+ 
+### NGO creates vendor order linked to a batch
+POST {{baseUrl}}/vendors/orders
+Authorization: Bearer {{ngoToken}}
+Content-Type: application/json
+ 
+{
+  "vendorOrgId": "seed-vendor-org-001",
+  "batchId":     "<batch_id>",
+  "programId":   "seed-program-001",
+  "items": [
+    { "description": "School meal packs x500", "quantity": 500, "unitPrice": 2.50 }
+  ],
+  "totalValue": 1250
+}
+ 
+### Vendor confirms delivery
+PATCH {{baseUrl}}/vendors/orders/<order_id>/deliver
+Authorization: Bearer {{vendorToken}}
+Content-Type: application/json
+ 
+{ "deliveryProofUrl": "https://storage.aidflow.org/vendor/delivery001.pdf" }
+ 
+### Controller approves settlement
+PATCH {{baseUrl}}/approvals/<approval_id>
+Authorization: Bearer {{controllerToken}}
+Content-Type: application/json
+ 
+{ "decision": "approved", "notes": "Delivery confirmed — settling payment" }

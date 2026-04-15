@@ -1,0 +1,28 @@
+### ── apps/api/requests/beneficiaries.http ────────────────────
+@baseUrl = http://localhost:4000/api/v1
+@ngoToken = <ngo_access_token>
+@adminToken = <admin_access_token>
+ 
+### List beneficiaries (NGO sees own org's beneficiaries)
+GET {{baseUrl}}/beneficiaries?page=1&limit=20
+Authorization: Bearer {{ngoToken}}
+ 
+### Create beneficiary
+POST {{baseUrl}}/beneficiaries
+Authorization: Bearer {{ngoToken}}
+Content-Type: application/json
+ 
+{
+  "fullName": "Amara Diallo",
+  "idNumber": "GH-009876",
+  "contact": "+233 20 000 1111",
+  "profileData": { "region": "West Africa", "ageGroup": "child" }
+}
+ 
+### Get single beneficiary
+GET {{baseUrl}}/beneficiaries/<beneficiary_id>
+Authorization: Bearer {{ngoToken}}
+ 
+### Get beneficiary entitlements
+GET {{baseUrl}}/beneficiaries/<beneficiary_id>/entitlements
+Authorization: Bearer {{ngoToken}}

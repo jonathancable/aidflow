@@ -1,0 +1,45 @@
+### ── apps/api/requests/distribution.http ──────────────────────
+@baseUrl = http://localhost:4000/api/v1
+@ngoToken        = <ngo_token>
+@controllerToken = <controller_token>
+ 
+### Create distribution batch
+POST {{baseUrl}}/distribution/batches
+Authorization: Bearer {{ngoToken}}
+Content-Type: application/json
+ 
+{
+  "programId":  "seed-program-001",
+  "totalAmount": 3000,
+  "notes": "Q1 West Africa feeding batch"
+}
+ 
+### Add beneficiaries to batch
+POST {{baseUrl}}/distribution/batches/<batch_id>/items
+Authorization: Bearer {{ngoToken}}
+Content-Type: application/json
+ 
+{
+  "items": [
+    { "beneficiaryId": "<ben_id_1>", "entitlementAmount": 150 },
+    { "beneficiaryId": "<ben_id_2>", "entitlementAmount": 150 }
+  ]
+}
+ 
+### Submit batch for approval
+POST {{baseUrl}}/distribution/batches/<batch_id>/submit
+Authorization: Bearer {{ngoToken}}
+ 
+### Controller: approve batch release
+PATCH {{baseUrl}}/approvals/<approval_id>
+Authorization: Bearer {{controllerToken}}
+Content-Type: application/json
+ 
+{ "decision": "approved", "notes": "Batch verified" }
+ 
+### Confirm delivery of a batch item
+PATCH {{baseUrl}}/distribution/batches/<batch_id>/items/<item_id>/confirm
+Authorization: Bearer {{ngoToken}}
+Content-Type: application/json
+ 
+{ "deliveryProofUrl": "https://storage.aidflow.org/proof/img001.jpg" }

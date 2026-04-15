@@ -1,0 +1,42 @@
+### ── apps/api/requests/allocations.http ──────────────────────
+@baseUrl = http://localhost:4000/api/v1
+@adminToken   = <admin_token>
+@controlToken = <controller_token>
+ 
+### Create allocation (Admin)
+POST {{baseUrl}}/allocations
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+ 
+{
+  "programId":      "seed-program-001",
+  "sourceWalletId": "<donor_wallet_id>",
+  "destWalletId":   "<program_wallet_id>",
+  "amount":         5000,
+  "notes":          "Q1 allocation from Jane Donor"
+}
+ 
+### Get approval queue (Controller)
+GET {{baseUrl}}/approvals?status=pending&assignedToRole=system_controller
+Authorization: Bearer {{controlToken}}
+ 
+### Approve an allocation (Controller)
+PATCH {{baseUrl}}/approvals/<approval_id>
+Authorization: Bearer {{controlToken}}
+Content-Type: application/json
+ 
+{
+  "decision": "approved",
+  "notes": "Verified donor wallet balance and program eligibility"
+}
+ 
+### Reject an allocation (Controller)
+PATCH {{baseUrl}}/approvals/<approval_id>
+Authorization: Bearer {{controlToken}}
+Content-Type: application/json
+ 
+{
+  "decision": "rejected",
+  "notes": "Insufficient documentation provided"
+}
+

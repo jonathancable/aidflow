@@ -1,0 +1,41 @@
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "[prisma]": {
+    "editor.defaultFormatter": "Prisma.prisma"
+  },
+  "eslint.workingDirectories": [
+    { "directory": "apps/api", "changeProcessCWD": true },
+    { "directory": "apps/web", "changeProcessCWD": true },
+    { "directory": "packages/shared", "changeProcessCWD": true }
+  ],
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/.turbo": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true
+  },
+  "editor.rulers": [100],
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "sqltools.connections": [
+    {
+      "name": "AidFlow Local",
+      "driver": "PostgreSQL",
+      "host": "localhost",
+      "port": 5432,
+      "database": "aidflow",
+      "username": "aidflow",
+      "password": "aidflow_dev"
+    }
+  ],
+  "prisma.pinToPrisma6": true
+}
