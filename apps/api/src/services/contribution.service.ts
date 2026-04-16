@@ -56,6 +56,12 @@ export const ContributionService = {
 
     // Step 2: All financial operations in one transaction
     const contribution = await prisma.$transaction(async (tx) => {
+      // Credit donor wallet with the incoming payment (simulates gateway deposit)
+      await tx.wallet.update({
+        where: { id: donorWallet!.id },
+        data: { balance: { increment: amount } },
+      });
+
       // Transfer from donor wallet to program wallet via LedgerService
       await LedgerService.transfer({
         fromWalletId: donorWallet!.id,
