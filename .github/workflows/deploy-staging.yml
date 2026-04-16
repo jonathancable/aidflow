@@ -44,7 +44,7 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     outputs:
-      image-tag: ${{ steps.meta.outputs.tags }}
+      sha-tag: ${{ steps.sha.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
@@ -55,22 +55,31 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository }}/aidflow-api
-          tags: |
-            type=sha,prefix=sha-
-            type=ref,event=branch
-      - name: Build and push
+      - name: Compute SHA tag
+        id: sha
+        run: echo "tag=sha-$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+      - name: Build and push API
         uses: docker/build-push-action@v5
         with:
           context: .
           file: apps/api/Dockerfile
           target: production
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: |
+            ghcr.io/${{ github.repository }}/aidflow-api:${{ steps.sha.outputs.tag }}
+            ghcr.io/${{ github.repository }}/aidflow-api:main
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Build and push web
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          target: production
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/aidflow-web:${{ steps.sha.outputs.tag }}
+            ghcr.io/${{ github.repository }}/aidflow-web:main
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -88,11 +97,13 @@ jobs:
           script: |
             set -e
             cd /opt/aidflow
-            SHA_TAG="sha-$(echo "${{ github.sha }}" | cut -c1-7)"
-            IMAGE="ghcr.io/${{ github.repository }}/aidflow-api:${SHA_TAG}"
+            SHA_TAG="${{ needs.build-and-push.outputs.sha-tag }}"
+            API_IMAGE="ghcr.io/${{ github.repository }}/aidflow-api:${SHA_TAG}"
+            WEB_IMAGE="ghcr.io/${{ github.repository }}/aidflow-web:${SHA_TAG}"
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-            docker pull "${IMAGE}"
-            API_IMAGE="${IMAGE}" docker compose --env-file .env.production -f docker-compose.prod.yml up -d --no-deps api
+            docker pull "${API_IMAGE}"
+            docker pull "${WEB_IMAGE}"
+            API_IMAGE="${API_IMAGE}" WEB_IMAGE="${WEB_IMAGE}" docker compose --env-file .env.production -f docker-compose.prod.yml up -d --no-deps api web
             sleep 30
             curl -f http://localhost:4000/health || exit 1
             echo "Staging deploy successful: ${SHA_TAG}"
