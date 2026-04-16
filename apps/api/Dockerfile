@@ -46,7 +46,8 @@ COPY --from=builder /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=builder /app/apps/api/dist           ./apps/api/dist
 COPY --from=builder /app/apps/api/src/generated  ./apps/api/dist/generated
 COPY --from=builder /app/apps/api/prisma         ./apps/api/prisma
-COPY --from=builder /app/packages/shared/dist    ./packages/shared/dist
+COPY --from=builder /app/packages/shared/package.json ./packages/shared/package.json
+COPY --from=builder /app/packages/shared/dist         ./packages/shared/dist
 
 # Give aidflow user ownership of everything (required for prisma migrate at runtime)
 RUN chown -R aidflow:aidflow /app
@@ -57,4 +58,4 @@ USER aidflow
 EXPOSE 4000
  
 # Run migrations then start the server
-CMD ["sh", "-c", "node_modules/.pnpm/node_modules/.bin/prisma migrate deploy --schema=apps/api/prisma/schema.prisma && node apps/api/dist/index.js"]
+CMD ["sh", "-c", "apps/api/node_modules/.bin/prisma migrate deploy --schema=apps/api/prisma/schema.prisma && node apps/api/dist/index.js"]
