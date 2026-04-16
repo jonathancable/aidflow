@@ -39,8 +39,9 @@ WORKDIR /app
 
 # Copy node_modules from builder — avoids re-running pnpm install with
 # workspace packages that aren't fully present in the production stage
-COPY --from=builder /app/node_modules          ./node_modules
-COPY --from=builder /app/apps/api/node_modules ./apps/api/node_modules
+COPY --from=builder /app/node_modules                    ./node_modules
+COPY --from=builder /app/apps/api/node_modules           ./apps/api/node_modules
+COPY --from=builder /app/packages/shared/node_modules    ./packages/shared/node_modules
 
 # Copy compiled output and Prisma artefacts from builder
 COPY --from=builder /app/apps/api/dist           ./apps/api/dist
