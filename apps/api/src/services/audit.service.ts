@@ -1,8 +1,8 @@
 // apps/api/src/services/audit.service.ts
 import { prisma } from "@/lib/prisma";
 import { logger } from "@middleware/logger.middleware";
-import { Prisma } from "@/generated/prisma";
-import type { UserRole } from "@/generated/prisma";
+import { Prisma } from "../generated/prisma";
+import type { UserRole } from "../generated/prisma";
 
 export interface AuditContext {
   actorId: string;

@@ -5,7 +5,8 @@ import {
   type Response,
   type NextFunction,
 } from "express";
-import { findUserById, updateUserStatus } from "@/dal/index";
+import { findUserById, findAllUsers, updateUserStatus } from "@/dal/index";
+import type { UserRole } from "../generated/prisma";
 import { authenticate } from "@middleware/authenticate.middleware";
 import { authorize } from "@middleware/authorize.middleware";
 import { AuditService } from "@services/audit.service";
@@ -55,8 +56,18 @@ router.get(
   authorize("users", "read"),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      // TODO: implement paginated user list in Sprint 6
-      res.status(501).json({ message: "Not implemented" });
+      const { page, limit, status, role } = req.query;
+      const result = await findAllUsers({
+        page: page ? Number(page) : 1,
+        limit: limit ? Number(limit) : 50,
+        ...(status ? { status: status as string } : {}),
+        ...(role ? { role: role as UserRole } : {}),
+      });
+      res.json({
+        success: true,
+        data: result.users,
+        meta: { total: result.total, page: result.page, limit: result.limit },
+      });
     } catch (err) {
       next(err);
     }

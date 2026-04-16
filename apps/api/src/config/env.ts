@@ -12,6 +12,7 @@ const EnvSchema = z.object({
   JWT_REFRESH_EXPIRES:  z.string().default('7d'),
   ENCRYPTION_KEY:       z.string().length(64), // 32 bytes hex-encoded
   CORS_ORIGINS:         z.string().default('http://localhost:5173'),
+  LOG_LEVEL:            z.enum(['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly']).default('info'),
   // Feature flags
   ENABLE_BLOCKCHAIN_SYNC:    z.coerce.boolean().default(false),
   ENABLE_PAYMENT_GATEWAY:    z.coerce.boolean().default(false),

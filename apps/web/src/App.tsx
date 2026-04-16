@@ -19,6 +19,7 @@ const ControllerLayout = lazy(
   () => import("@features/layouts/ControllerLayout"),
 );
 const NGOLayout = lazy(() => import("@features/layouts/NGOLayout"));
+const VendorLayout = lazy(() => import("@features/layouts/VendorLayout"));
 const LoginPage = lazy(() => import("@pages/auth/LoginPage"));
 
 // Guards
@@ -47,9 +48,9 @@ function RoleRouter() {
     case "donor":
       return <Navigate to="/donor/dashboard" replace />;
     case "ngo":
-      return <Navigate to="/ngo/dashboard" replace />;
+      return <Navigate to="/ngo/programs" replace />;
     case "vendor":
-      return <Navigate to="/vendor/dashboard" replace />;
+      return <Navigate to="/vendor/orders" replace />;
     default:
       return <Navigate to="/login" replace />;
   }
@@ -108,10 +109,7 @@ export default function App() {
 
               {/* Vendor */}
               <Route element={<RoleGuard allowedRoles={["vendor"]} />}>
-                <Route
-                  path="/vendor/*"
-                  element={<Navigate to="/vendor/orders" replace />}
-                />
+                <Route path="/vendor/*" element={<VendorLayout />} />
               </Route>
             </Route>
 

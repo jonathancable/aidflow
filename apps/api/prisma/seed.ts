@@ -1,5 +1,6 @@
 import { PrismaClient, UserRole } from "../src/generated/prisma";
 import bcrypt from "bcryptjs";
+import { encrypt } from "../src/lib/encryption";
 
 const prisma = new PrismaClient();
 
@@ -87,12 +88,36 @@ async function main() {
     },
   });
 
-  await prisma.wallet.create({
+  // System wallet — debit side for seed opening-balance entries (balance stays at 0 by convention)
+  const systemWallet = await prisma.wallet.create({
+    data: {
+      ownerType: "system_treasury",
+      ownerId: admin.id,
+      balance: 0,
+      currency: "USD",
+    },
+  });
+
+  const donorWallet = await prisma.wallet.create({
     data: {
       ownerType: "donor",
       ownerId: donor.id,
       balance: 50000,
       currency: "USD",
+    },
+  });
+
+  // Seed the donor's opening balance via a ledger entry so wallet reconciliation passes
+  await prisma.ledgerEntry.create({
+    data: {
+      debitWalletId: systemWallet.id,
+      creditWalletId: donorWallet.id,
+      amount: 50000,
+      currency: "USD",
+      referenceType: "seed",
+      referenceId: "SEED_OPENING_BALANCE",
+      description: "Seed opening balance",
+      createdBy: admin.id,
     },
   });
 
@@ -131,19 +156,19 @@ async function main() {
     },
   });
 
-  // 6. Sample beneficiaries (PII pre-encrypted for dev only) ────
+  // 6. Sample beneficiaries — PII encrypted via AES-256-GCM on write ────
   const bens = [
-    { id: SEED.ben001, name: "enc:Amara Diallo",  idNum: "enc:GH-001234" },
-    { id: SEED.ben002, name: "enc:Kwame Asante",  idNum: "enc:GH-001235" },
-    { id: SEED.ben003, name: "enc:Fatima Toure",  idNum: "enc:GH-001236" },
+    { id: SEED.ben001, name: "Amara Diallo", idNum: "GH-001234" },
+    { id: SEED.ben002, name: "Kwame Asante", idNum: "GH-001235" },
+    { id: SEED.ben003, name: "Fatima Toure", idNum: "GH-001236" },
   ];
   for (const b of bens) {
     await prisma.beneficiary.create({
       data: {
         id: b.id,
         orgId: ngoOrg.id,
-        encryptedName: b.name,
-        encryptedIdNumber: b.idNum,
+        encryptedName: encrypt(b.name),
+        encryptedIdNumber: encrypt(b.idNum),
         profileData: { region: "West Africa", ageGroup: "child" },
       },
     });
