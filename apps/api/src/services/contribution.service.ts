@@ -54,7 +54,7 @@ export const ContributionService = {
     // Step 1: Process payment (stub — replace with real gateway in Sprint 6)
     const paymentRef = await processPaymentStub(amount, currency);
 
-    // Step 2: All financial operations in one transaction
+    // Step 2: Transfer funds and record the contribution atomically
     const contribution = await prisma.$transaction(async (tx) => {
       // Transfer from donor wallet to program wallet via LedgerService
       await LedgerService.transfer({

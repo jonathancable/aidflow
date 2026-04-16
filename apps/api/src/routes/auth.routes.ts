@@ -98,7 +98,10 @@ router.post(
         user.orgId,
       );
 
-      await updateLastLogin(user.id);
+      const [, fullUser] = await Promise.all([
+        updateLastLogin(user.id),
+        findUserById(user.id),
+      ]);
 
       // Fire-and-forget audit — login success
       AuditService.log({
@@ -129,8 +132,10 @@ router.post(
           user: {
             id: user.id,
             email: user.email,
+            name: fullUser?.fullName ?? "",
             role: user.role,
             orgId: user.orgId,
+            walletId: fullUser?.walletId ?? null,
           },
         },
       });
