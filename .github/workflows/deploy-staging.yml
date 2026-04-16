@@ -92,7 +92,7 @@ jobs:
             IMAGE="ghcr.io/${{ github.repository }}/aidflow-api:${SHA_TAG}"
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
             docker pull "${IMAGE}"
-            API_IMAGE="${IMAGE}" docker-compose --env-file .env.production -f docker-compose.prod.yml up -d --no-deps api
+            API_IMAGE="${IMAGE}" docker compose --env-file .env.production -f docker-compose.prod.yml up -d --no-deps api
             sleep 10
             curl -f http://localhost:4000/health || exit 1
             echo "Staging deploy successful: ${SHA_TAG}"
