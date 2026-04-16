@@ -2,11 +2,13 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Sidebar } from "./components/Sidebar";
 import UsersPage from "@pages/admin/UsersPage";
+import AllocationsPage from "@pages/admin/AllocationsPage";
 import ControllerDashboard from "@pages/controller/ControllerDashboard";
 
 const NAV = [
   { label: "Overview", href: "/admin/dashboard" },
   { label: "Users", href: "/admin/users" },
+  { label: "Allocations", href: "/admin/allocations" },
 ];
 
 export default function AdminLayout() {
@@ -23,6 +25,7 @@ export default function AdminLayout() {
         <Routes>
           <Route path="dashboard" element={<ControllerDashboard />} />
           <Route path="users" element={<UsersPage />} />
+          <Route path="allocations" element={<AllocationsPage />} />
           <Route path="*" element={<Navigate to="dashboard" replace />} />
         </Routes>
       </main>

@@ -31,7 +31,7 @@ export async function findPrograms(filters: {
     ...(orgId ? { orgId } : {}),
     ...(region ? { region } : {}),
   };
-  const [programs, total] = await prisma.$transaction([
+  const [programs, total, wallets] = await prisma.$transaction([
     prisma.program.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -40,8 +40,20 @@ export async function findPrograms(filters: {
       include: { org: { select: { id: true, name: true } } },
     }),
     prisma.program.count({ where }),
+    prisma.wallet.findMany({
+      where: { ownerType: "program" },
+      select: { id: true, ownerId: true },
+    }),
   ]);
-  return { programs, total, page, limit };
+
+  const walletByProgram = Object.fromEntries(
+    wallets.map((w) => [w.ownerId, w.id]),
+  );
+  const programsWithWallet = programs.map((p) => ({
+    ...p,
+    walletId: walletByProgram[p.id] ?? null,
+  }));
+  return { programs: programsWithWallet, total, page, limit };
 }
 
 export async function createProgram(data: Prisma.ProgramUncheckedCreateInput) {
