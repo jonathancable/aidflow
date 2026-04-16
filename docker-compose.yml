@@ -55,7 +55,7 @@ services:
       - '5173:5173'
     volumes:
       - ./apps/web/src:/app/apps/web/src
-      - ./packages:/app/packages
+      - ./packages/shared/src:/app/packages/shared/src
     environment:
       VITE_API_URL: http://api:4000
     depends_on:
