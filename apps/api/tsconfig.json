@@ -3,8 +3,12 @@
   "compilerOptions": {
     "rootDir": "./src",
     "outDir": "./dist",
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
+    "module": "CommonJS",
+    "moduleResolution": "Node10",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "declaration": false,
+    "declarationMap": false,
     "baseUrl": ".",
     "paths": {
       "@/*":             ["src/*"],
@@ -13,7 +17,8 @@
       "@routes/*":       ["src/routes/*"],
       "@middleware/*":   ["src/middleware/*"],
       "@config/*":       ["src/config/*"],
-      "@types/*":        ["src/types/*"]
+      "@types/*":        ["src/types/*"],
+      "@/generated/*":   ["src/generated/*"]
     }
   },
   "include": ["src/**/*"],

@@ -24,6 +24,12 @@ import { VendorService } from "@services/vendor.service";
 import "./jobs/workers"; // starts BullMQ workers
 import { reconciliationQueue } from "./jobs/queue";
 
+// apps/api/src/index.ts — add metrics endpoint
+import {
+  metricsMiddleware,
+  metricsRoute,
+} from "@middleware/metrics.middleware";
+
 // Register all approval resolvers — must run before any request is processed
 AllocationService.registerApprovalResolver();
 BatchService.registerApprovalResolver();
@@ -107,6 +113,11 @@ app.use("/api/v1/beneficiaries", beneficiariesRouter);
 app.use("/api/v1/vendors", vendorsRouter);
 app.use("/api/v1/reports", reportsRouter);
 app.use("/api/v1/users", usersRouter);
+
+app.use(metricsMiddleware);
+// /metrics must be accessible to Prometheus but NOT exposed to the public internet
+// In production, restrict to internal network via firewall rule or nginx upstream block
+app.get("/metrics", metricsRoute);
 
 // Health check — for load balancer / uptime monitoring
 app.get("/health", (_req, res) => res.json({ status: "ok", ts: Date.now() }));
