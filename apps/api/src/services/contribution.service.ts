@@ -54,14 +54,17 @@ export const ContributionService = {
     // Step 1: Process payment (stub — replace with real gateway in Sprint 6)
     const paymentRef = await processPaymentStub(amount, currency);
 
-    // Step 2: All financial operations in one transaction
-    const contribution = await prisma.$transaction(async (tx) => {
-      // Credit donor wallet with the incoming payment (simulates gateway deposit)
-      await tx.wallet.update({
-        where: { id: donorWallet!.id },
-        data: { balance: { increment: amount } },
-      });
+    // Step 2: Credit donor wallet — simulates the gateway depositing funds.
+    // Must be outside the outer transaction; LedgerService.transfer runs its
+    // own transaction and would deadlock if the donor wallet row were already
+    // locked by an outer tx before it runs.
+    await prisma.wallet.update({
+      where: { id: donorWallet!.id },
+      data: { balance: { increment: amount } },
+    });
 
+    // Step 3: Transfer funds and record the contribution atomically
+    const contribution = await prisma.$transaction(async (tx) => {
       // Transfer from donor wallet to program wallet via LedgerService
       await LedgerService.transfer({
         fromWalletId: donorWallet!.id,
