@@ -31,19 +31,17 @@ RUN pnpm --filter @aidflow/api run build
 FROM node:20-alpine AS production
 
 RUN apk add --no-cache openssl
-RUN npm install -g pnpm
 
 # Create non-root user — production containers must NOT run as root
 RUN addgroup -S aidflow && adduser -S aidflow -G aidflow
- 
+
 WORKDIR /app
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
-COPY packages/shared/package.json ./packages/shared/
-COPY apps/api/package.json ./apps/api/
- 
-# Install PRODUCTION deps only
-RUN pnpm install --frozen-lockfile --prod
- 
+
+# Copy node_modules from builder — avoids re-running pnpm install with
+# workspace packages that aren't fully present in the production stage
+COPY --from=builder /app/node_modules          ./node_modules
+COPY --from=builder /app/apps/api/node_modules ./apps/api/node_modules
+
 # Copy compiled output and Prisma artefacts from builder
 COPY --from=builder /app/apps/api/dist           ./apps/api/dist
 COPY --from=builder /app/apps/api/src/generated  ./apps/api/dist/generated
