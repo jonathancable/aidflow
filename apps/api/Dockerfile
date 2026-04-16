@@ -3,7 +3,7 @@
 FROM node:20-alpine AS builder
 
 RUN apk add --no-cache openssl
-RUN npm install -g pnpm
+RUN npm install -g pnpm@9
 
 WORKDIR /app
 # Copy workspace manifests first — Docker layer cache
