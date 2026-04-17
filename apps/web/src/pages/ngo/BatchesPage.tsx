@@ -47,6 +47,7 @@ function BatchDetail({ batchId, onBack }: { batchId: string; onBack: () => void 
   const [selectedBeneficiary, setSelectedBeneficiary] = useState("");
   const [entitlement, setEntitlement] = useState("");
   const [confirmUrl, setConfirmUrl] = useState<Record<string, string>>({});
+  const [confirmError, setConfirmError] = useState<Record<string, string>>({});
 
   const batch = data?.data;
   const beneficiaries: any[] = beneficiariesData?.data ?? [];
@@ -75,7 +76,14 @@ function BatchDetail({ batchId, onBack }: { batchId: string; onBack: () => void 
   const handleConfirm = async (itemId: string) => {
     const url = confirmUrl[itemId];
     if (!url) return;
-    await confirmDelivery.mutateAsync({ batchId, itemId, deliveryProofUrl: url });
+    setConfirmError((prev) => ({ ...prev, [itemId]: "" }));
+    try {
+      await confirmDelivery.mutateAsync({ batchId, itemId, deliveryProofUrl: url });
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.error?.message ?? "Failed to confirm delivery";
+      setConfirmError((prev) => ({ ...prev, [itemId]: msg }));
+    }
   };
 
   return (
@@ -251,13 +259,20 @@ function BatchDetail({ batchId, onBack }: { batchId: string; onBack: () => void 
               </span>
               {canConfirm && item.status !== "confirmed" && (
                 <>
-                  <input
-                    type="url"
-                    placeholder="https://proof.example.com/photo.jpg"
-                    value={confirmUrl[item.id] ?? ""}
-                    onChange={(e) => setConfirmUrl((prev) => ({ ...prev, [item.id]: e.target.value }))}
-                    style={{ fontSize: 12, width: "95%" }}
-                  />
+                  <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                    <input
+                      type="url"
+                      placeholder="https://proof.example.com/photo.jpg"
+                      value={confirmUrl[item.id] ?? ""}
+                      onChange={(e) => setConfirmUrl((prev) => ({ ...prev, [item.id]: e.target.value }))}
+                      style={{ fontSize: 12, width: "95%" }}
+                    />
+                    {confirmError[item.id] && (
+                      <span style={{ fontSize: 11, color: "var(--color-text-danger)" }}>
+                        {confirmError[item.id]}
+                      </span>
+                    )}
+                  </div>
                   <button
                     onClick={() => handleConfirm(item.id)}
                     disabled={confirmDelivery.isPending || !confirmUrl[item.id]}
@@ -269,7 +284,8 @@ function BatchDetail({ batchId, onBack }: { batchId: string; onBack: () => void 
                       color: "var(--color-text-success)",
                       border: "0.5px solid var(--color-border-success)",
                       borderRadius: "var(--border-radius-md)",
-                      cursor: "pointer",
+                      cursor: confirmDelivery.isPending || !confirmUrl[item.id] ? "not-allowed" : "pointer",
+                      opacity: confirmDelivery.isPending || !confirmUrl[item.id] ? 0.45 : 1,
                     }}
                   >
                     Confirm
