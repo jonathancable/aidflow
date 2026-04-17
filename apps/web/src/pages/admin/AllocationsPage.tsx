@@ -21,6 +21,17 @@ const STATUS_COLOR: Record<string, string> = {
 
 export default function AllocationsPage() {
   const [page, setPage] = useState(1);
+  const [form, setForm] = useState({
+    programId: "",
+    sourceWalletId: "",
+    amount: "",
+    notes: "",
+  });
+  const [submitted, setSubmitted] = useState<{
+    approvalId: string;
+    amount: number;
+  } | null>(null);
+
   const { data, isLoading } = useAllocations({ page });
   const { data: programsData } = usePrograms({ status: "active" });
   const { data: walletsData } = useWallets();
@@ -32,21 +43,9 @@ export default function AllocationsPage() {
   const allWallets: WalletSummary[] = walletsData?.data ?? [];
   const selectedProgram = programs.find((p) => p.id === form.programId);
   const destWalletId: string = selectedProgram?.walletId ?? "";
-  // Source wallets: any wallet with available balance that isn't the destination
   const sourceWallets = allWallets.filter(
     (w) => w.available > 0 && w.id !== destWalletId,
   );
-
-  const [form, setForm] = useState({
-    programId: "",
-    sourceWalletId: "",
-    amount: "",
-    notes: "",
-  });
-  const [submitted, setSubmitted] = useState<{
-    approvalId: string;
-    amount: number;
-  } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
