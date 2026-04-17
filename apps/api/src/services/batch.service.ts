@@ -27,10 +27,13 @@ export const BatchService = {
           const programWallet = await findWalletByOwner(batch.programId);
           if (!programWallet) throw new NotFoundError("Program wallet");
 
-          // Release reserved funds: one transfer per batch item to beneficiary entitlement
+          const systemWallet = await prisma.wallet.findFirst({
+            where: { ownerType: "system_treasury" },
+          });
+          if (!systemWallet) throw new NotFoundError("System treasury wallet");
+
           await prisma.$transaction(async (tx) => {
             for (const item of batch.items) {
-              // Create beneficiary entitlement record
               await tx.beneficiaryEntitlement.create({
                 data: {
                   beneficiaryId: item.beneficiaryId,
@@ -38,21 +41,18 @@ export const BatchService = {
                   amount: item.entitlementAmount,
                 },
               });
-              // Update batch item status
               await tx.batchItem.update({
                 where: { id: item.id },
                 data: { status: "pending" },
               });
             }
 
-            // Single ledger debit from program wallet for total batch amount
-            await LedgerService.transfer({
-              fromWalletId: programWallet.id,
-              toWalletId: programWallet.id, // debit from program — tracked via ledger
+            // Release the reservation: debits program wallet balance+reserved, credits system treasury
+            await LedgerService.release({
+              walletId: programWallet.id,
+              toWalletId: systemWallet.id,
               amount: Number(batch.totalAmount),
-              referenceType: "batch_release",
               referenceId: batch.id,
-              description: `Batch ${batch.id} released`,
               actorId,
             });
 
