@@ -29,6 +29,25 @@ const DeliverSchema = z.object({
   deliveryProofUrl: z.string().url().max(500),
 });
 
+// GET /api/v1/vendors/orgs — list vendor-type organizations
+router.get(
+  "/orgs",
+  authenticate,
+  authorize("vendors", "read"),
+  async (_req, res, next) => {
+    try {
+      const orgs = await prisma.organization.findMany({
+        where: { type: "vendor" },
+        select: { id: true, name: true, region: true },
+        orderBy: { name: "asc" },
+      });
+      return res.json({ success: true, data: orgs });
+    } catch (err) {
+      return next(err);
+    }
+  },
+);
+
 // POST /api/v1/vendors/orders
 router.post(
   "/orders",
