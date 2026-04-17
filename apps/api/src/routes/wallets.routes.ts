@@ -43,6 +43,49 @@ async function assertWalletAccess(
   throw new AuthorizationError("You do not have access to this wallet");
 }
 
+// GET /api/v1/wallets — admin / controller only — list all wallets with owner labels
+router.get(
+  "/",
+  authenticate,
+  authorize("wallets", "read"),
+  async (req, res, next) => {
+    try {
+      const role = req.context.role;
+      if (role !== "system_admin" && role !== "system_controller") {
+        throw new AuthorizationError("Admin or Controller access required");
+      }
+      const { prisma } = await import("@/lib/prisma");
+      const wallets = await prisma.wallet.findMany({ orderBy: { createdAt: "asc" } });
+
+      const donorIds = wallets.filter((w) => w.ownerType === "donor").map((w) => w.ownerId);
+      const programIds = wallets.filter((w) => w.ownerType === "program").map((w) => w.ownerId);
+      const [users, programs] = await Promise.all([
+        prisma.user.findMany({ where: { id: { in: donorIds } }, select: { id: true, fullName: true } }),
+        prisma.program.findMany({ where: { id: { in: programIds } }, select: { id: true, name: true } }),
+      ]);
+      const userMap = Object.fromEntries(users.map((u) => [u.id, u.fullName]));
+      const programMap = Object.fromEntries(programs.map((p) => [p.id, p.name]));
+
+      const data = wallets.map((w) => ({
+        id: w.id,
+        ownerType: w.ownerType,
+        ownerId: w.ownerId,
+        ownerName:
+          w.ownerType === "donor" ? (userMap[w.ownerId] ?? w.ownerId) :
+          w.ownerType === "program" ? (programMap[w.ownerId] ?? w.ownerId) :
+          w.ownerType === "system_treasury" ? "System Treasury" : w.ownerId,
+        balance: Number(w.balance),
+        reservedAmount: Number(w.reservedAmount),
+        available: Number(w.balance) - Number(w.reservedAmount),
+        currency: w.currency,
+      }));
+      return res.json({ success: true, data });
+    } catch (err) {
+      return next(err);
+    }
+  },
+);
+
 // GET /api/v1/wallets/:id
 router.get(
   "/:id",

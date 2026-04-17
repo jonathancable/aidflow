@@ -83,7 +83,15 @@ export const ApprovalService = {
       );
     }
 
-    // Update the approval record
+    // Fire the entity-specific resolver FIRST so that if it throws
+    // (e.g. insufficient funds, bad wallet), the approval record stays
+    // "pending" and the controller can see it again to retry.
+    const resolver = resolvers.get(approval.entityType);
+    if (resolver) {
+      await resolver(approval.entityId, decision, resolvedById, notes);
+    }
+
+    // Only mark the approval resolved once the resolver has succeeded.
     await prisma.approvalRequest.update({
       where: { id: approvalId },
       data: {
@@ -93,12 +101,6 @@ export const ApprovalService = {
         notes: notes ?? null,
       },
     });
-
-    // Fire the entity-specific resolver callback
-    const resolver = resolvers.get(approval.entityType);
-    if (resolver) {
-      await resolver(approval.entityId, decision, resolvedById, notes);
-    }
   },
 
   // Get pending approvals — used by the Controller's queue

@@ -1,22 +1,9 @@
 # docker-compose.prod.yml — production compose (no volume mounts, no hot reload)
 # On the server: place all env vars in /opt/aidflow/.env.production (see .env.production.example)
-
+# NOTE: The web frontend is served by the host nginx from /var/www/aidflow.
+#       The CI deploy script copies built assets from the Docker image into that directory.
 
 services:
-  web:
-    image: ${WEB_IMAGE:-ghcr.io/jonathan/aidflow/aidflow-web:main}
-    ports:
-      - "80:80"
-    restart: unless-stopped
-    depends_on:
-      - api
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:80"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-
   api:
     image: ${API_IMAGE:-ghcr.io/jonathan/aidflow/aidflow-api:main}
     ports:

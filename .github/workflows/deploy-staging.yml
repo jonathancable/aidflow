@@ -112,7 +112,14 @@ jobs:
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
             docker pull "${API_IMAGE}"
             docker pull "${WEB_IMAGE}"
-            API_IMAGE="${API_IMAGE}" WEB_IMAGE="${WEB_IMAGE}" docker compose --env-file .env.production -f docker-compose.prod.yml up -d --no-deps api web
+            # Deploy API container
+            API_IMAGE="${API_IMAGE}" docker compose --env-file .env.production -f docker-compose.prod.yml up -d --no-deps api
+            # Copy built web assets from Docker image into nginx web root
+            docker run --rm \
+              -v /var/www/aidflow:/mnt/web \
+              --entrypoint sh \
+              "${WEB_IMAGE}" \
+              -c "cp -rp /usr/share/nginx/html/. /mnt/web/"
             sleep 30
             curl -f http://localhost:4000/health || exit 1
             echo "Staging deploy successful: ${SHA_TAG}"
