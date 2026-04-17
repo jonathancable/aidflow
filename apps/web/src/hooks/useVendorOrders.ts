@@ -2,6 +2,33 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@lib/api-client";
 
+export function useVendorOrgs() {
+  return useQuery({
+    queryKey: ["vendor-orgs"],
+    queryFn: async () => {
+      const { data } = await apiClient.get("/vendors/orgs");
+      return data as { success: boolean; data: { id: string; name: string; region?: string }[] };
+    },
+  });
+}
+
+export function useCreateVendorOrder() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: {
+      vendorOrgId: string;
+      batchId: string;
+      programId: string;
+      items: { description: string; quantity: number; unitPrice: number }[];
+      totalValue: number;
+    }) => {
+      const { data } = await apiClient.post("/vendors/orders", payload);
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: vendorOrderKeys.all() }),
+  });
+}
+
 export const vendorOrderKeys = {
   all: () => ["vendor-orders"] as const,
   list: (p: Record<string, unknown>) => ["vendor-orders", "list", p] as const,
