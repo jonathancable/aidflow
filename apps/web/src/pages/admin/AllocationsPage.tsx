@@ -2,6 +2,8 @@
 import { useState } from "react";
 import { useAllocations, useCreateAllocation } from "@hooks/useAllocations";
 import { usePrograms } from "@hooks/usePrograms";
+import { useWallets } from "@hooks/useWallets";
+import type { WalletSummary } from "@hooks/useWallets";
 
 const STATUS_LABEL: Record<string, string> = {
   pending_approval: "Pending",
@@ -21,11 +23,19 @@ export default function AllocationsPage() {
   const [page, setPage] = useState(1);
   const { data, isLoading } = useAllocations({ page });
   const { data: programsData } = usePrograms({ status: "active" });
+  const { data: walletsData } = useWallets();
   const createAllocation = useCreateAllocation();
 
   const allocations: any[] = data?.data ?? [];
   const total: number = data?.meta?.total ?? 0;
   const programs: any[] = (programsData?.data as any[]) ?? [];
+  const allWallets: WalletSummary[] = walletsData?.data ?? [];
+  const selectedProgram = programs.find((p) => p.id === form.programId);
+  const destWalletId: string = selectedProgram?.walletId ?? "";
+  // Source wallets: any wallet with available balance that isn't the destination
+  const sourceWallets = allWallets.filter(
+    (w) => w.available > 0 && w.id !== destWalletId,
+  );
 
   const [form, setForm] = useState({
     programId: "",
@@ -37,9 +47,6 @@ export default function AllocationsPage() {
     approvalId: string;
     amount: number;
   } | null>(null);
-
-  const selectedProgram = programs.find((p) => p.id === form.programId);
-  const destWalletId: string = selectedProgram?.walletId ?? "";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -174,7 +181,7 @@ export default function AllocationsPage() {
             )}
           </div>
 
-          {/* Source wallet ID */}
+          {/* Source wallet */}
           <div style={{ marginBottom: 14 }}>
             <label
               style={{
@@ -184,18 +191,23 @@ export default function AllocationsPage() {
                 marginBottom: 5,
               }}
             >
-              Source wallet ID
+              Source wallet
             </label>
-            <input
-              type="text"
+            <select
               value={form.sourceWalletId}
               onChange={(e) =>
                 setForm((f) => ({ ...f, sourceWalletId: e.target.value }))
               }
-              placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+              style={{ width: "100%" }}
               required
-              style={{ width: "100%", fontFamily: "monospace", fontSize: 12 }}
-            />
+            >
+              <option value="">Select a wallet…</option>
+              {sourceWallets.map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.ownerName} ({w.ownerType}) — ${w.available.toLocaleString()} available
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Amount */}
